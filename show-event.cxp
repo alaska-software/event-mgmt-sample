@@ -1,0 +1,110 @@
+<!--
+//////////////////////////////////////////////////////////////////////
+//
+//  SHOW-EVENT.CXP
+//
+//  Copyright:
+//        Alaska Software, (c) 2016-2023. All rights reserved.         
+//  
+//  Contents:
+//        CXP page for displaying event information. The
+//        record number of the event must be passed to this
+//        page as a parameter.
+//////////////////////////////////////////////////////////////////////
+-->
+
+<%#page layout="./site.layout" implements="showevent" trace="yes"%>
+
+<%
+  /*
+   * Open tables and indexes used by the CXP
+   * page. The respective path is configurable
+   * via the global application.config file.
+   */
+  cPath := GetDataPath( ::application )
+  USE (cPath+"events.dbf")     INDEX (cPath+"events.cdx")     VIA "foxcdx" NEW
+  USE (cPath+"event_keys.dbf") INDEX (cPath+"event_keys.cdx") VIA "foxcdx" NEW
+
+  DbSelectArea("events")
+  nRecNo := Val(::params:entry)
+  DbGoto( nRecNo )
+%>
+
+<h1>
+    <a class="back"><i class="icon-arrow-left-3 fg-darker smaller"></i></a>
+    Event
+</h1>
+
+<!--
+Create the HTML elements for displaying
+event details. The respective values are
+read in from the events table.
+-->
+<div class="grid">
+<div class="row">
+  <div class="span9">
+
+  <h2>@(field->title)</h2>
+
+  <p>
+     <strong>
+       Location:
+     </strong><br>
+     @(field->city)
+     @IF(!Empty(field->country))
+       , @(field->country)
+     @ENDIF
+     @IF(!Empty(field->location))
+       <br>@(field->location)
+     @ENDIF
+  </p>
+
+<p>
+  <strong>
+     Begin:
+  </strong>@(Var2LChar(field->s_date))
+      @(Var2LChar(field->s_time))
+@IF(!Empty(field->e_date))
+ <br><strong>
+     End:
+     </strong>@(Var2LChar(field->e_date))
+      @(Var2LChar(field->e_time))
+@ENDIF
+</p>
+
+<p>
+  <strong>
+     Languages:
+  </strong>@(GetLanguageCode(field->lang))
+</p>
+
+<p>
+ <strong>
+     Contact:
+  </strong><br>
+@IF(!Empty(field->cont_name))
+    @(field->cont_name)<br>
+@ENDIF
+@IF(!Empty(field->cont_email))
+    @(EMailLink(field->cont_email))<br>
+@ENDIF
+</p>
+
+<p>
+ <strong>
+     Description:
+ </strong><br>
+@(field->comment)
+</p>
+
+@IF(!Empty(field->www))
+<p>
+ <strong>
+    More:
+ </strong>@(WebLink(field->www))
+</p>
+@ENDIF
+
+</div>
+</div>
+</div>

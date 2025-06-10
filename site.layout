@@ -1,0 +1,112 @@
+<!--
+//////////////////////////////////////////////////////////////////////
+//
+//  SITE.LAYOUT
+//
+//  Copyright:
+//        Alaska Software, (c) 2016-2023. All rights reserved.         
+//  
+//  Contents:
+//        Site layout file used by all CXP pages in the project.
+//        The layout defines all global references (assets, CSS,
+//        jQuery etc.) as well as the page elements shared by all
+//        pages.
+//   
+//        The actual page content is defined in the various CXP
+//        pages in the project, and is inserted by the system
+//        into the content area defined below.
+//   
+//////////////////////////////////////////////////////////////////////
+-->
+
+<%#PAGE trace="yes"%>
+<%
+  // This forces IE to be out of compatiblity mode (edge=latest release)
+  ::HttpResponse:AddHeader("X-UA-Compatible","IE=edge,chrome=1")
+ %>
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <link rel="stylesheet" href="./assets/css/metro-bootstrap.css">
+  <link href="./assets/css/metro-bootstrap-responsive.css" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/css/site.css">
+
+  <script src="./assets/js/jquery/jquery.min.js"></script>
+  <script src="./assets/js/jquery/jquery.widget.min.js"></script>
+  <script src="./assets/js/metro.min.js"></script>
+  <script src="./assets/js/alaska-software.webui.js"></script>
+  <script src="./assets/js/site.js"></script>
+
+  <meta http-equiv="pragma" content="no-cache">
+  <meta http-equiv="expires" content="now">
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
+
+  <title>
+    Event Management Sample
+  </title>
+
+  <style>
+     .copyright {
+        float: right;
+        margin-right: 10px;
+        margin-top: 5px;
+        font-size: 0.8em;
+     }
+     .title {
+        padding-top: 5px;
+        margin-left: 10px;
+        font-size: 0.8em;
+     }
+     .navigation-bar {
+        height: 2em;
+        vertical-align: middle;
+     }
+  </style>
+</head>
+
+<body class="metro">
+
+<!--- Page header -->
+<header class="bg-dark">
+  <div class="navigation-bar bg-darkCobalt">
+  <div class="title">Event Management Example</div>
+  <noscript>
+   <div id="no-javascript-alert" class="bg-red" style="width:100%;height:9em;">
+    <h1 class="fg-lightTeal" style="margin-top:0px;margin-left:10px;">
+      Oops, JavaScript is disabled
+    </h1>
+    <h2 class="fg-lightTeal" style="margin-top:0px;margin-left:10px;">
+      This site and the related web applications require javascript to be enabled. Please consult your browser documentation to enable javascript to get the best possible user experience.
+    </h2>
+   </div>
+  </noscript>
+
+  &nbsp;
+  </div>
+
+</header>
+<!-- Page header end -->
+
+
+<!--- Content area -->
+<div class="container content" id="view-container">
+@RENDER Body
+</div>
+
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<!-- Content area end -->
+
+
+<!--- Page footer -->
+<div class="navigation-bar bg-darkCobalt fixed-bottom">
+  <nav class="navigation-bar-content">
+    <span class="copyright">Copyright 2016, Alaska Software</span>
+  </nav>
+</div>
+<!-- Page footer end -->
+
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!--
+//////////////////////////////////////////////////////////////////////
+//
+//  ADD-EVENT.CXP
+//
+//  Copyright:
+//        Alaska Software, (c) 2016-2023. All rights reserved.         
+//  
+//  Contents:
+//        CXP Page for adding an event to the event table. The
+//        following information must be passed to this page as
+//        parameters:
+//          o Name ("title")
+//          o Start date ("s_date")
+//          o End date ("e_date")
+//          o City ("city")
+//          o Country ("country")
+//   
+//        After the event is added, the CXP page for editing
+//        the new event is called.
+//   
+//////////////////////////////////////////////////////////////////////
+-->
+
+<%#page layout="./site.layout" implements="addevent" trace="yes"%>
+
+<%
+  /*
+   * Open tables and indexes used by the CXP
+   * page. The respective path is configurable
+   * via the global application.config file.
+   */
+  SET DATE TO AMERICAN
+  cPath := GetDataPath( ::application )
+  USE (cPath+"events.dbf") INDEX (cPath+"events.cdx") VIA "foxcdx" NEW
+
+  DbSelectArea("events")
+  OrdSetFocus("id")
+
+  /*
+   * Append a new event to the table using the
+   * parameters passed to this CXP page. Note
+   * the usage of the Utf82Char() function for
+   * transforming free-text values (which may
+   * theoretically be from an arbitrary locale)
+   * to the local character format.
+   */
+  DbAppend()
+  field->title := AllTrim(Utf82Char(SELF:params:title))
+  SET DATE FORMAT TO "dd.mm.yyyy"
+  cID := UUIDToChar( UUIDCreate() )
+  field->id      := cID
+  IF !Empty(SELF:params:s_date)
+     field->s_date := CToD(SELF:params:s_date)
+  ELSE
+     field->s_date := Date()
+  ENDIF
+  IF !Empty(SELF:params:e_date)
+     field->e_date  := CToD(SELF:params:e_date)
+  ELSE
+     field->e_date := Date()
+  ENDIF
+  field->city    := AllTrim(Utf82Char(SELF:params:city))
+  field->country := SELF:params:country
+  DbRUnlock()
+  DbCloseArea()
+
+  ::renderPage("./edit-event.cxp", cID)
+%>

@@ -1,0 +1,182 @@
+<!--
+//////////////////////////////////////////////////////////////////////
+//
+//  LIST-EVENTS.CXP
+//
+//  Copyright:
+//        Alaska Software, (c) 2016-2023. All rights reserved.         
+//  
+//  Contents:
+//        CXP page for listing and editing events. The page
+//        features a set of input elements for adding new events
+//        as well as a list of existing events which can be
+//        deleted or edited. Adding, deleting and editing events
+//        is implemented in individual CXP pages.
+//////////////////////////////////////////////////////////////////////
+-->
+
+<%#page layout="./site.layout" implements="listevents" trace="yes"%>
+
+<script src="./assets/js/metro-calendar.js"></script>
+<script src="./assets/js/metro-datepicker.js"></script>
+
+<h1>
+    <a href="index.cxp"><i class="icon-arrow-left-3 fg-darker smaller"></i></a>
+    Manage Events
+</h1>
+
+<%
+  /*
+   * Open tables and indexes used by the CXP
+   * page. The respective path is configurable
+   * via the global application.config file.
+   */
+  SET DATE TO AMERICAN
+  cPath := GetDataPath( ::application )
+  USE (cPath+"country.dbf")    INDEX (cPath+"country.cdx")    VIA "foxcdx" ALIAS "country" NEW
+  USE (cPath+"events.dbf")     INDEX (cPath+"events.cdx")     VIA "foxcdx" NEW
+  USE (cPath+"event_keys.dbf") INDEX (cPath+"event_keys.cdx") VIA "foxcdx" NEW
+
+  DbSelectArea("events")
+  OrdSetFocus("S_DATE")
+  GO BOTTOM
+  nEvents   := 0
+  nRowState := 0
+  nRowCols  := 3
+%>
+
+
+<!--
+Create a HTML form element with input elements for
+adding a new event. Note the usage of the Alaska
+WebUI for calling the CXP page for adding the event,
+and for transferring the form values (see
+data-action, data-parameter).
+!-->
+
+<form id="newevent">
+<table class="table hovered">
+  <thead>
+  <tr>
+      <th class="text-left">Title</th>
+      <th class="text-left">Start</th>
+      <th class="text-left">End</th>
+      <th class="text-left">City</th>
+      <th class="text-left">Country</th>
+      <th class="text-left">Action</th>
+  </tr>
+  </thead>
+  <tbody>
+
+  <tr>
+    <td>
+      <div class="input-control text" data-role="input-control">
+      <input name="title" id="title" type="text" placeholder='Event Title'>
+      <button class="btn-clear" tabindex="-1"></button>
+      </div>
+    </td>
+    <td class="right">
+      <div class="input-control text" data-role="datepicker">
+      <input name="s_date" type="text" placeholder='Start Date'>
+      <button class="btn-date"></button>
+      </div>
+    </td>
+    <td class="right">
+      <div class="input-control text" data-role="datepicker">
+      <input name="e_date" type="text" placeholder='End Date'>
+      <button class="btn-date"></button>
+      </div>
+    </td>
+    <td class="right">
+      <div class="input-control text" data-role="input-control">
+      <input name="city" type="text" placeholder='City Name'>
+      <button class="btn-clear" tabindex="-1"></button>
+      </div>
+    </td>
+    <td class="right">
+       <div class="input-control select" data-role="input-control">
+       <select  name="country" style="width:150px">
+       <option value="">Country</option>
+@DO WHILE !country->(EOF())
+       <option value="@(country->ccode)">@(AllTrim(country->country))</option>
+@      SKIP 1 IN country
+@ENDDO
+       </select>
+       </div>
+
+        </td>
+        <td class="right">
+          <button class="mini" style="width:6em;"
+                  data-action="./add-event.cxp"
+                  data-parameter="form:newevent"
+                  data-validate="checkform">
+             Add
+          </button>
+        </td>
+      </tr>
+
+
+<!--
+Loop for creating the UI elements for displaying
+information about existing events, and for
+editing and deleting them. Again, the Alaska
+WebUI is used for executing the respective
+CXP pages as well as for transferring the event
+id stored in the form. Also, the user is prompted
+for confirmation before an event is deleted.
+!-->
+
+@DO WHILE .t.
+@ cID := AllTrim(field->id)
+
+      <tr @('id="event_'+AllTrim(field->id)+'"')>
+        <td>@(AllTrim(field->title))</td>
+        <td class="right">@(DToC(field->s_date) + " " + field->s_time)</td>
+        <td class="right">@(DToC(field->e_date) + " " + field->e_time)</td>
+        <td class="right">@(AllTrim(field->city))</td>
+        <td class="right">@(AllTrim(field->country))</td>
+        <td class="right">
+           <button class="mini" style="width:6em;"
+                   data-action="./edit-event.cxp"
+                   data-parameter="fields:id='@(AllTrim(field->id))'">
+             Edit
+           </button><br>
+           <button class="mini" style="width:6em;"
+                   data-confirm='Confirm deletion of event?'
+                   data-action="./delete-event.cxp"
+                   data-parameter="fields:id='@(AllTrim(field->id))'"
+                   data-target="hiddencontainer">
+              Delete
+           </button></td>
+      </tr>
+
+<%
+  SKIP -1
+  nEvents++
+
+  // Restrict event to timeframe and max. amount of events.
+  IF BOF() .OR. !ShowEvent(nEvents, field->s_date, ::application)
+    EXIT
+  ENDIF
+ENDDO
+IF(nRowState!=0)
+  ? "</div>"
+ENDIF
+
+%>
+
+      </tbody>
+      <tfoot></tfoot>
+    </table>
+</form>
+
+<script>
+function checkform() {
+  if( $("#title").val().length == 0 ) {
+     alert( "Please specify an event name!" );
+     return false;
+  }
+
+  return true;
+}
+</script>

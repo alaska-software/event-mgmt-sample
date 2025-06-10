@@ -1,0 +1,111 @@
+<!--
+//////////////////////////////////////////////////////////////////////
+//
+//  EXPORT-EVENTS.CXP
+//
+//  Copyright:
+//        Alaska Software, (c) 2016-2023. All rights reserved.         
+//  
+//  Contents:
+//        CXP page for exporting the events selected by the user
+//        as an iCalendar (.ics) file. The .ics file can be
+//        imported into the user's calendar, for example.
+//////////////////////////////////////////////////////////////////////
+-->
+
+<%#page implements="exportevents" trace="yes" %>
+<%
+  /*
+   * Read the ids of the events selected by the user from
+   * the "SelectedCommunityEvents" array in the current
+   * session
+   */
+  aEvents := ::Session:SelectedCommunityEvents
+
+  /*
+   * Open tables and indexes used by the CXP
+   * page. The respective path is configurable
+   * via the global application.config file.
+   */
+  cPath := GetDataPath( ::application )
+  USE (cPath+"events.dbf") INDEX (cPath+"events.cdx") VIA "foxcdx" NEW
+  DbSelectArea("events")
+
+  /*
+   * If no events were selected by the user,
+   * export all events that were selectable.
+   * To do this, we need to assemble the event 
+   * ids
+   */
+  IF ValType(aEvents)!="A" .OR. Len(aEvents) == 0
+     OrdSetFocus("S_DATE")
+     GO BOTTOM
+
+     nEvents := 0
+     aEvents := {}     
+
+     DO WHILE .T.
+        AAdd( aEvents, field->id )
+
+        nEvents++
+        SKIP -1
+
+        // Restrict event to timeframe and max. amount of events.
+        IF BOF() .OR. !ShowEvent(nEvents, field->s_date, ::application)
+          EXIT
+        ENDIF 
+     ENDDO
+  ENDIF
+
+  OrdSetFocus("id")
+
+  /*
+   * Successively add the events to a new
+   * virtual calendar object which is the
+   * serialized for generating the return
+   * value. The class VCalendar is
+   * implemented in the helper dll event-
+   * helper.dll.
+   */
+  oVCalendar := VCalendar():New()
+
+  FOR n:=1 TO Len(aEvents)
+    cID := aEvents[n]
+
+    IF(!DbSeek(cID))
+      ::Trace( "ID-NOT-FOUND:"+cID)
+      LOOP
+    ENDIF
+
+    cStart := DToS( field->s_date ) + "T"
+    IF !Empty(LTrim(field->s_time))
+       cStart += PadR( StrTran(field->s_time, ":", ""), 6, "0" )
+    ELSE
+       cStart += "120000"
+    ENDIF
+
+    cEnd := DToS( field->e_date ) + "T"
+    IF !Empty(LTrim(field->e_time))
+       cEnd += PadR( StrTran(field->e_time, ":", ""), 6, "0" )
+    ELSE
+       cEnd += "120000"
+    ENDIF
+
+    oVEvent := VEvent():New( field->title, cStart, cEnd )
+    oVEvent:Location := field->location
+
+    oVCalendar:Add(oVEvent)
+  NEXT n
+
+  cData := oVCalendar:toString()
+
+  /*
+   * Create the return value of the CXP
+   * page; the virtual calendar is returned
+   * as an .ics file (alaska-software-
+   * events.ics).
+   */
+  ::HttpResponse:ContentType := "text/calendar; charset=utf-8"
+  ::HttpResponse:AddHeader("content-disposition","attachment; filename=alaska-software-events.ics")
+  ::HttpResponse:WriteBinary( cData )
+%>

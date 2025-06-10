@@ -1,0 +1,83 @@
+<!--
+//////////////////////////////////////////////////////////////////////
+//
+//  SAVE-EVENT.CXP
+//
+//  Copyright:
+//        Alaska Software, (c) 2016-2023. All rights reserved.         
+//  
+//  Contents:
+//        CXP Page for saving an event into the event table.
+//        The following information must be passed to this
+//        page as parameters:
+//          o Name ("title")
+//          o Start date ("s_date")
+//          o Start time ("s_time")
+//          o End date ("e_date")
+//          o End time ("e_time")
+//          o Category ("category")
+//          o Status ("status")
+//          o Languages ("language")
+//          o City ("city")
+//          o Country ("country)
+//          o Location ("location")
+//   
+//        After the event is saved, the CXP page for
+//        listing evente is called.
+//////////////////////////////////////////////////////////////////////
+-->
+
+<%#page layout="./site.layout" implements="saveevent" trace="yes"%>
+
+<%
+  /*
+   * Open tables and indexes used by the CXP
+   * page. The respective path is configurable
+   * via the global application.config file.
+   */
+  SET DATE TO GERMAN
+  cPath := GetDataPath( ::application )
+  USE (cPath+"events.dbf") INDEX (cPath+"events.cdx") VIA "foxcdx" NEW
+
+  DbSelectArea("events")
+  OrdSetFocus("id")
+  DbSeek( SELF:params:id )
+
+  /*
+   * Lock the event record and the store the
+   * values passed as parameters to this CXP
+   * page. Note the usage of the Utf82Char()
+   * function for transforming free-text values
+   * (which may theoretically be from an
+   * arbitrary locale) to the local character
+   * format.
+   */
+  IF(Found())
+    DbRLock()
+
+    field->title   := AllTrim(Utf82Char(SELF:params:title))
+    field->comment := AllTrim(Utf82Char(SELF:params:comment))
+
+    SET DATE FORMAT TO "dd.mm.yyyy"
+    field->s_date := CToD(SELF:params:s_date)
+    field->s_time := AllTrim(SELF:params:s_time)
+    field->e_date := CToD(SELF:params:e_date)
+    field->e_time := AllTrim(SELF:params:e_time)
+
+    field->category  := SELF:params:category
+    field->status    := SELF:params:status
+    field->lang      := SELF:params:lang
+
+    field->city      := AllTrim(Utf82Char(SELF:params:city))
+    field->country   := SELF:params:country
+    field->location  := AllTrim(Utf82Char(SELF:params:location))
+
+    field->cont_name  := AllTrim(Utf82Char(SELF:params:cont_name))
+    field->cont_email := AllTrim(Utf82Char(SELF:params:cont_email))
+    field->www        := AllTrim(Utf82Char(SELF:params:www))
+    DbRUnlock()
+  ENDIF
+  DbCloseArea()
+
+  ::renderPage("./list-events.cxp")
+%>

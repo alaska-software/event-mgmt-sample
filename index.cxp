@@ -1,0 +1,45 @@
+<!--
+//////////////////////////////////////////////////////////////////////
+//
+//  INDEX.CXP
+//
+//  Copyright:
+//        Alaska Software, (c) 2016-2023. All rights reserved.         
+//  
+//  Contents:
+//        Start page of the event management example. This page gives access
+//        to the internal and the public interface of the system.
+//   
+//////////////////////////////////////////////////////////////////////
+-->
+
+<%#page layout="./site.layout" trace="yes"%>
+
+<style type="text/css">
+   .tile-content h2 {
+      color : white;
+      margin-left: 5px;
+   }
+   .tile-content p {
+      color : white;
+      margin-left: 5px;
+   }
+</style>
+
+<h1>&nbsp;</h1>
+
+<div>
+   <a href="./show-events.cxp" class="tile triple bg-darkBlue live">
+      <div class="tile-content">
+         <h2>Browse Events</h2>
+         <p>Publicly accessessible event calendar</p>
+      </div>
+   </a>
+
+   <a href="./list-events.cxp" class="tile triple bg-darkOrange live">
+      <div class="tile-content">
+         <h2>Manage Events</h2>
+         <p>Internal event management system</p>
+      </div>
+   </a>
+</div>

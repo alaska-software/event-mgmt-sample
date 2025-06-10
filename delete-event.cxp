@@ -1,0 +1,54 @@
+<!--
+//////////////////////////////////////////////////////////////////////
+//
+//  DELETE-EVENT.CXP
+//
+//  Copyright:
+//        Alaska Software, (c) 2016-2023. All rights reserved.         
+//  
+//  Contents:
+//        CXP Page for deleting an event from the event table.
+//        The id of the event must be passed to this page as
+//        a parameter.
+//   
+//        Note the <script> section at the end of the page for
+//        removing the event from the screen! This is the
+//        return value of the CXP page and is executed by the
+//        browser.
+//////////////////////////////////////////////////////////////////////
+-->
+
+<%#page implements="deleteevent" trace="yes"%>
+
+<%
+  /*
+   * Open tables and indexes used by the CXP
+   * page. The respective path is configurable
+   * via the global application.config file.
+   */
+  SET DATE TO AMERICAN
+  cPath := GetDataPath( ::application )
+  USE (cPath+"events.dbf") INDEX (cPath+"events.cdx") VIA "foxcdx" NEW
+
+  /*
+   * Find and delete the event in the table
+   */
+  DbSelectArea("events")
+  OrdSetFocus("id")
+  DbSeek( SELF:params:id )
+  ::trace("PARA:"+SELF:params:id )
+  cId := "event_"+AllTrim(field->id)
+  IF(Found())
+    DbRLock()
+    field->id    := ""
+    DbDelete()
+    DbRUnlock()
+  ENDIF
+  DbCloseArea()
+%>
+<!--
+  Remove given event from the screen
+-->
+<script>
+ $("#@(cId)").remove();
+</script>

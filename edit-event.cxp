@@ -1,0 +1,218 @@
+<!--
+//////////////////////////////////////////////////////////////////////
+//
+//  EDIT-EVENT.CXP
+//
+//  Copyright:
+//        Alaska Software, (c) 2016-2023. All rights reserved.         
+//  
+//  Contents:
+//        CXP Page for editing an event. The id of the event must
+//        be passed to this page as a parameter.
+//////////////////////////////////////////////////////////////////////
+-->
+
+<%#page layout="./site.layout" implements="editevent" trace="yes"%>
+
+<!--
+Include and initialize jQuery plugins for date, calendar
+and selection/drop-down list management.
+-->
+<script src="./assets/js/metro-calendar.js"></script>
+<script src="./assets/js/metro-datepicker.js"></script>
+<script src="./assets/sumoselect/jquery.sumoselect.js"></script>
+<link href="./assets/sumoselect/sumoselect.css" rel="stylesheet" />
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        window.asd = $('.SlectBox').SumoSelect({ csvDispCount: 3 });
+        window.test = $('.testsel').SumoSelect({okCancelInMulti:true });
+    });
+</script>
+
+
+<h1>
+  <a href="#" class="back"><i class="icon-arrow-left-3 fg-darker smaller"></i></a>
+  Edit Event
+</h1>
+
+
+<%
+  /*
+   * Open table(s) and indexes used by the CXP
+   * page. The respective path is configurable
+   * via the global application.config file.
+   * Locate the event to be edited.
+   */
+  SET DATE TO AMERICAN
+  cPath := GetDataPath( ::application )
+  USE (cPath+"country.dbf")    INDEX (cPath+"country.cdx")    VIA "foxcdx" ALIAS "country" NEW
+  USE (cPath+"events.dbf")     INDEX (cPath+"events.cdx")     VIA "foxcdx" NEW
+  USE (cPath+"event_keys.dbf") INDEX (cPath+"event_keys.cdx") VIA "foxcdx" NEW
+
+  DbSelectArea("events")
+  OrdSetFocus("id")
+  cID := PValue(1)
+  DbSeek( cID )
+
+  // 20150101 -> 2015-01-01
+  cS_Date := DToS(field->s_date)
+  cS_Date := Stuff(cS_Date,5,0,"-")
+  cS_Date := Stuff(cS_Date,8,0,"-")
+
+  IF(Empty(field->e_date))
+    cE_Date := ""
+  ELSE
+  cE_Date := DToS(field->e_date)
+  cE_Date := Stuff(cE_Date,5,0,"-")
+  cE_Date := Stuff(cE_Date,8,0,"-")
+  ENDIF
+%>
+
+<!--
+Create an HTML <form> element with the controls
+for manipulating event details. The respective
+values are read in from the events table.
+-->
+<div class="grid">
+<form id="editevent" class="small">
+  <input type="hidden" name="id" value="@(field->id)">
+<fieldset>
+  <div class="row">
+    <div class="span12">
+     <h5 style="margin-top:0px;padding-top:0px;">
+        Title and Description
+     </h5>
+     <div class="input-control text" data-role="input-control">
+        <input name="title" type="text" placeholder='Enter Name' value="@(AllTrim(field->title))">
+        <button class="btn-clear" tabindex="-1"></button>
+     </div>
+     <div class="input-control textarea">
+        <textarea name="comment">@(AllTrim(field->comment))</textarea>
+     </div>
+
+    </div>
+  </div>
+  <div class="row">
+    <div class="span6">
+       <h5 style="margin-top:0px;padding-top:0px;">Event Starts/Ends</h5>
+       <div class="input-control text size2" data-role="datepicker" @(IIF(!Empty(cS_Date),'data-date="'+cS_Date+'"',""))>
+          <input name="s_date" type="text">
+          <button class="btn-date"></button>
+       </div>
+       <div class="input-control select size2" data-role="input-control">
+          <select  name="s_time" class="size2">
+             <option value="" >Choose Time</option>
+
+             @FOR n:= 1 TO 24 STEP 0.5
+                @cVal := StrZero(Int(n),2)+IIF(Int(n)!=n,':30',':00')
+                <option @(iif(cVal==field->s_time,"selected","")) >@(cVal)</option>
+             @NEXT n
+          </select>
+       </div><br>
+
+       <div class="input-control text size2" data-role="datepicker" @(IIF(!Empty(cE_Date),'data-date="'+cE_Date+'"',""))>
+          <input name="e_date" placeholder='Choose Date' type="text">
+          <button class="btn-date"></button>
+       </div>
+       <div class="input-control select size2" data-role="input-control">
+          <select name="e_time" class="size2">
+             <option value="" >Choose Time</option>
+             @FOR n:= 1 TO 24 STEP 0.5
+                @cVal := StrZero(Int(n),2)+IIF(Int(n)!=n,':30',':00')
+                <option @(iif(cVal==field->e_time,"selected","")) >@(cVal)</option>
+             @NEXT n
+          </select>
+       </div>
+
+       <h5 style="margin-top:0px;padding-top:0px;">Category/Status/Languages</h5>
+       <div class="input-control select size4" data-role="input-control">
+          <select name="category">
+             <option value="">Select Category</option>
+
+             @SEEK "category" ORDER fieldname IN event_keys
+             @DO WHILE !event_keys->(EOF()) .AND. AllTrim(event_keys->fieldname)=="category"
+                <option @(IIF(event_keys->token==events->category,"selected","")) value="@(event_keys->token)">@(AllTrim(event_keys->descriptio))</option>
+                @SKIP 1 IN event_keys
+             @ENDDO
+          </select>
+       </div>
+       <div class="input-control select size4" data-role="input-control">
+          <select name="status">
+             <option value="">Select Status</option>
+             @SEEK "status" ORDER fieldname IN event_keys
+             @DO WHILE !event_keys->(EOF()) .AND. AllTrim(event_keys->fieldname)=="status"
+                <option @(IIF(event_keys->token==events->status,"selected","")) value="@(event_keys->token)">@(AllTrim(event_keys->descriptio))</option>
+                @SKIP 1 IN event_keys
+             @ENDDO
+          </select>
+       </div><br>
+
+       <div class="input-control select size8" data-role="input-control">
+          <select name="lang" multiple="multiple" placeholder='Select Languages' class="SlectBox">
+             <option @(IIF("EN" $ field->lang,"selected","")) value="EN">English</option>
+             <option @(IIF("DE" $ field->lang,"selected","")) value="DE">German</option>
+             <option @(IIF("ES" $ field->lang,"selected","")) value="ES">Spanish</option>
+             <option @(IIF("NL" $ field->lang,"selected","")) value="NL">Dutch</option>
+             <option @(IIF("FR" $ field->lang,"selected","")) value="FR">French</option>
+          </select>
+       </div>
+     </div>
+    
+     <div class="span6">
+        <h5 style="margin-top:0px;padding-top:0px;">Location/Contact Information</h5>
+        <div class="input-control text size3" data-role="input-control">
+        <input name="city" type="text" placeholder='Enter City Name' value="@(AllTrim(field->city))">
+        <button class="btn-clear" tabindex="-1"></button>
+     </div>
+
+     <div class="input-control select size3" data-role="input-control">
+        <select name="country" style="width:15em;">
+           <option value="">Select Country</option>
+           @DO WHILE !country->(EOF())
+              <option @(IIF(country->ccode==events->country,"selected","")) value="@(country->ccode)">@(AllTrim(country->country))</option>
+              @SKIP 1 IN country
+           @ENDDO
+        </select>
+     </div>
+
+     <div class="input-control textarea size6">
+        <textarea name="location">@(AllTrim(field->location))</textarea>
+     </div>
+
+     <div class="input-control text size6" data-role="input-control">
+        <input name="cont_name" type="text" placeholder='Contact Name' value="@(AllTrim(field->cont_name))">
+        <button class="btn-clear" tabindex="-1"></button>
+     </div>
+     <div class="input-control text size6" data-role="input-control">
+        <input name="cont_email" type="text" placeholder='Contact Email' value="@(AllTrim(field->cont_email))">
+        <button class="btn-clear" tabindex="-1"></button>
+     </div>
+     <div class="input-control text size6" data-role="input-control">
+        <input name="www" type="text" placeholder='Event URL' value="@(AllTrim(field->www))">
+        <button class="btn-clear" tabindex="-1"></button>
+     </div>
+
+    </div>
+  </div>
+</fieldset>
+</form>
+
+<!--
+Add the buttons for saving the event details
+and for cancelling the operation. Note the
+usage of the Alaska WebUI for calling the
+respective CXP page asynchronously (data-
+action) as well as for transferring the
+values in the HTML <form> element (data-
+parameter).
+-->
+<div class="row">
+    <div class="span12">
+     <div class="place-right">
+     <button data-action="./save-event.cxp" data-parameter="form:editevent">Save</button>&nbsp;
+     <button data-action="./list-events.cxp">Cancel</button>
+     </div>
+    </div>
+  </div>
+</div>

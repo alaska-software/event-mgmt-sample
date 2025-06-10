@@ -1,0 +1,78 @@
+<%
+//////////////////////////////////////////////////////////////////////
+//
+//  TOGGLE-EVENT.CXP
+//
+//  Copyright:
+//        Alaska Software, (c) 2016-2023. All rights reserved.         
+//  
+//  Contents:
+//        CXP Page for toggling the "selected" status of an
+//        event. The id of the event must be passed to this page
+//        as a parameter.
+//   
+//        Return value of the CXP page is a specification of
+//        whether the HTML element corresponding to the event
+//        should be assigned the "selected" CSS style class or
+//        not. This defines the visual appearance of the event
+//        on the screen.
+//   
+//        NOTE: This CXP page is used in conjunction with the
+//        data-css-target attribute of the Alaska WebUI!
+//////////////////////////////////////////////////////////////////////
+%>
+
+<%#page implements="toggleevent" trace="yes" %>
+<%
+  IF(Empty(PValue(1)))
+    ::Trace("no id")
+    RETURN
+  ENDIF
+  cID := AllTrim(PValue(1))
+
+  /*
+   * Open tables and indexes used by the CXP
+   * page. The respective path is configurable
+   * via the global application.config file.
+   */
+  cPath := GetDataPath( ::application )
+  USE (cPath+"events.dbf")     INDEX (cPath+"events.cdx")     VIA "foxcdx" NEW
+  DbSelectArea("events")
+  OrdSetFocus("id")
+
+  IF(!DbSeek(cID))
+    ::Trace( "ID-NOT-FOUND:"+cID)
+    RETURN
+  ENDIF
+
+  /*
+   * Check if the given event is marked as a
+   * selected event in the session. If so,
+   * delete it from the corresponding array
+   * and remove the "selected" CSS class from
+   * the styling of the associated HTML
+   * element. Otherwise, insert the event
+   * into the array of selected elements and
+   * add the "selected" CSS class to have the
+   * HTML element visualized as selected.
+   */
+  IF Empty(::Session:SelectedCommunityEvents) .OR. ValType(::Session:SelectedCommunityEvents)!="A"
+    ::Session:SelectedCommunityEvents := { cID }
+    ::Trace("SELECTION:"+Var2Char(::Session:SelectedCommunityEvents))
+    ? "selected"
+    RETURN
+  ENDIF
+  nP := ASCan(::Session:SelectedCommunityEvents, cID )
+  IF nP!=0
+    ::Trace("AREMOVE-BEFORE:"+Var2Char(::Session:SelectedCommunityEvents))
+    ARemove(::Session:SelectedCommunityEvents,nP)
+    ? "selected "
+    ::Trace("AREMOVE-AFTER:"+Var2Char(::Session:SelectedCommunityEvents))
+  ELSE
+    ::Trace("ADDING:"+Var2Char(::Session:SelectedCommunityEvents))
+    AAdd( ::Session:SelectedCommunityEvents, cID )
+    ? "selected"
+  ENDIF
+  ::Trace("SELECTION:"+Var2Char(::Session:SelectedCommunityEvents))
+  ::Session:WriteTrigger := .T.
+%>

@@ -1,0 +1,170 @@
+<!--
+//////////////////////////////////////////////////////////////////////
+//
+//  SHOW-EVENTS.CXP
+//
+//  Copyright:
+//        Alaska Software, (c) 2016-2023. All rights reserved.         
+//  
+//  Contents:
+//        CXP Page fuer das Anzeigen der Event-Tabelle gespeicherten
+//        Events. Diese Seite bildet den Einstieg in den oeffentlichen
+//        Teil der Event-Verwaltung.
+//   
+//        Ueber die Seite koennen vom Anwender Detailinformationen zu
+//        den angezeigten Events abgefragt werden oder ausgewaehlte
+//        Events koennen als .ICS-Datei heruntergeladen und dem
+//        eigenen Kalender hinzugefuegt werden.
+//   
+//        Fuer jedes Ereignis wird eine Kachel mit den wichtigsten
+//        Daten angezeigt.
+//   
+//  Contents:
+//        CXP page for displaying the events in the event table.
+//        This page is the first page of the public part of the event
+//        management system.
+//   
+//        The page allows the user to display detail information
+//        of the events being displayed, and to download selected
+//        events as an ics file for addition to the user's calendar.
+//   
+//        For each event a tile is displayed with summary information.
+//////////////////////////////////////////////////////////////////////
+-->
+
+<%#page layout="./site.layout" implements="showevents" trace="yes"%>
+
+<%#code locality="page-global"%>
+<%
+/// <summary>
+/// Check whether an event has been selected (tagged) by the user
+/// </summary>
+/// <param name="oPage">The current CXP page object</param>
+/// <param name="cID">The identifier of the event</param>
+/// <returns>
+/// "selected" if the event is selected, otherwise an empty string.
+/// </returns>
+FUNCTION IsEventSelected(oPage,cID)
+   IF(ValType(oPage:session:selectedCommunityEvents)!="A")
+      RETURN ""
+   ENDIF
+   IF(0==AScan(oPage:session:selectedCommunityEvents, cID ))
+      RETURN ""
+   ENDIF
+RETURN "selected"
+%>
+
+<h1>
+    <a href="./index.cxp"><i class="icon-arrow-left-3 fg-darker smaller"></i></a>
+    Browse Events
+</h1>
+
+
+<%
+ /*
+   * Open tables and indexes used by the CXP
+   * page. The respective path is configurable
+   * via the global application.config file.
+   */
+  cPath := GetDataPath( ::application )
+  USE (cPath+"events.dbf")     INDEX (cPath+"events.cdx")     VIA "foxcdx" NEW
+  USE (cPath+"event_keys.dbf") INDEX (cPath+"event_keys.cdx") VIA "foxcdx" NEW
+
+  DbSelectArea("events")
+  OrdSetFocus("S_DATE")
+  GO BOTTOM
+  nEvents := 0
+  nRowState := 0
+  nRowCols  := 3
+%>
+
+<div class="grid">
+<div class="listview">
+
+<!--
+  Loop over the events and display those within a specific
+  timeframe. Past events receive a specific color.
+-->
+@DO WHILE .T.
+   @cID := AllTrim(field->id)
+
+   @IF(nRowState==0)
+      <div class="row">
+   @ENDIF
+   @nRowState++
+   @lAlreadyHeld := (field->s_date < Date())
+
+   <!--
+   Display of the event. The day image is created in datebadge.cxp, the event
+   state is determined via the IsEventSelected() function which returns a
+   CSS classname. From a conceptual, view all HTML components of the page 
+   receive their visual definiton via CSS classes. In this case, 
+   class="list selected bg-alaskaGray" shows an selected future event and 
+   class="list bg-white" shows a past event.
+   -->
+   <div class="span4">
+     <div id="@(cID)" class="list @(IsEventSelected(self,cID)) @(IIF(lAlreadyHeld,' bg-white',' bg-alaskaGray'))">
+        <div class="list-content" data-action="./show-event.cxp?entry=@(RecNo())">
+           <a href="./toggle-event.cxp" data-parameter="@(cID)" data-css-target="@(cID)">
+              <img src="./datebadge.cxp?month=@(Month(field->s_date))&day=@(Day(field->s_date))" class="icon">
+           </a>
+           <div class="data">
+              <span class="list-title">@(field->title)</span>
+              <span class="list-remark">@(GetEventTimeframe(field->s_date,field->e_date)),&nbsp; @(field->city)</span>
+           </div>
+        </div>
+     </div>
+  </div>
+  @IF(nRowState==nRowCols)
+    </div>
+    @nRowState := 0
+  @ENDIF
+
+<%
+  SKIP -1
+  nEvents++
+
+  // Restrict event to timeframe and max. amount of events.
+  IF BOF() .OR. !ShowEvent(nEvents, field->s_date, ::application)
+    EXIT
+  ENDIF
+ENDDO
+
+IF(nRowState!=0)
+  ? "</div>"
+ENDIF
+%>
+</div>
+
+<div class="row">
+  <div class="span12">
+   <small>
+      <p>
+      Click on the date (grey rectangle) of an event to mark the event
+      for download. Click on the event name to display detail information.
+
+      </p>
+   </small>
+  </div>
+</div>
+
+<div class="row">
+  <div class="span12">
+   <a href="./export-events.cxp">
+   <button class="command-button bg-blue">
+   <i class="icon-share-3 on-right"></i>
+   Download marked events
+   <small>
+      <p>
+      The marked events are provided in *.ics format. This format
+      can be processed by most calendar software (i.e. Microsoft
+      Outlook, Windows Live Mail, Mozilla Thunderbird oder
+      Android S Planner).
+      </p>
+   </small>
+   </button>
+</a>
+</div>
+
+</div>
+</div>

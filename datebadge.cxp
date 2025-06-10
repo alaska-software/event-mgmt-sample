@@ -1,0 +1,83 @@
+<!--
+//////////////////////////////////////////////////////////////////////
+//
+//  DATEBADGE.CXP
+//
+//  Copyright:
+//        Alaska Software, (c) 2016-2023. All rights reserved.         
+//  
+//  Contents:
+//        CXP page for creating a GIF image with a given date as 
+//        caption. The image is created dynamically and returned as a 
+//        binary stream. The date must be passed as day and month to 
+//        the CXP page.
+//////////////////////////////////////////////////////////////////////
+-->
+
+<%#code locality="page-render"%>
+
+<%
+#define  XBPBMP_FORMAT_GIF          4096
+#define  GRA_CLR_BLACK                 1
+#define  GRA_CLR_PALEGRAY             15
+#define  GRA_CLR_BLUE                  2
+#define  XBPBMP_FORMAT_PNG                  16384
+
+   cMonth := SubStr(CMonth(SToD("2000"+PADL(::params:month,2,"0")+"01")),1,3)
+   cDay   := ::params:day
+
+   xs := 50
+   ys := 50
+
+   /*
+    * Create a bitmap and clear it with 
+    * a filled rectangle
+    */
+   oBmp:= XbpBitmap():new():Create()
+   oPS := XbpPresSpace():new():create()
+   oBmp:presSpace( oPS )
+   oBmp:make( xs , ys )
+
+   oPS:setColor( GRA_CLR_PALEGRAY )
+   GraBox(oPS,{0,0},{xs,ys},1,0,0)
+
+   oPS:setColor( GRA_CLR_BLACK )
+
+   /*
+    * Set up font for text output and
+    * output the day and month into 
+    * the bitmap
+    */
+   oFont := XbpFont():new()
+   oFont:familyName := "Segoe UI"
+   oFont:nominalPointSize := 10
+   oFont:create()
+   oPS:setFont(oFont)
+
+   aBox := GraQueryTextBox(oPS,cMonth)
+   nW   := aBox[3][1] - aBox[2][1]
+   aPos := { int( (xs - nW)/2 ), 5 }
+   GraStringAt(oPS,aPos,cMonth)
+
+   oFont := XbpFont():new()
+   oFont:familyName := "Segoe UI"
+   oFont:nominalPointSize := 18
+   oFont:create()
+   oPS:setFont(oFont)
+
+   aBox := GraQueryTextBox(oPS,cDay)
+   nW   := aBox[3][1] - aBox[2][1]
+   aPos := { int( (xs - nW)/2 ), 20 }
+   GraStringAt(oPS,aPos,cDay)
+
+   /*
+    * Return image data in GIF format
+    * as a binary stream. Set the content
+    * type accordingly for proper display
+    * in the browser.
+    */
+   ::HttpResponse:contentType := "image/gif"
+   ::HttpResponse:writeBinary( oBmp:SetBuffer(, XBPBMP_FORMAT_GIF) )
+
+   oBmp:destroy()
+%>

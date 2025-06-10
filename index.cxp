@@ -4,11 +4,14 @@
 //  INDEX.CXP
 //
 //  Copyright:
-//        Alaska Software, (c) 2016-2023. All rights reserved.         
+//        Alaska Software, (c) 2016-2025. All rights reserved.         
 //  
 //  Contents:
-//        Start page of the event management example. This page gives access
-//        to the internal and the public interface of the system.
+//        This sample implements a simple event management system, complete 
+//        with a public and an internal management interface. Topics 
+//        demonstrated here are using application and page-specific
+//        configuration data, connecting to a database, using helper DLLs, 
+//        pagelets and site layout files as well as the Alaska WebUI.
 //   
 //////////////////////////////////////////////////////////////////////
 -->

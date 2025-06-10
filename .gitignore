@@ -1,1 +1,4 @@
-ECHO is on.
+
+# cxp output folders
+cxp-application/
+cxp-data/

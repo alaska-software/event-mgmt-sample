@@ -2,3 +2,7 @@
 # cxp output folders
 cxp-application/
 cxp-data/
+
+# user project files
+project.*.layout.*
+project.xpj.*

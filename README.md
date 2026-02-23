@@ -132,4 +132,4 @@ The `application.config` file controls runtime behavior:
 
 ## License
 
-Copyright © 2016–2025 Alaska Software. All rights reserved.
+Copyright © 2025 Alaska Software. All rights reserved.
